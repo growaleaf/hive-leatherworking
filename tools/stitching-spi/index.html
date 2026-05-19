@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leatherworking Stitching SPI Calculator — Hive Leatherworking</title>
+<meta name="description" content="Recommended stitches per inch (SPI) for leatherworking, by leather thickness, project type, and thread size.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<!-- GA4: G-FMMGEHVXNV -->
+<style>
+:root { --bg: #f5ede0; --ink: #2a1a0e; --soft: #5a4530; --accent: #8a5630; --warm: #5a6a3a; --rule: #e0d2bc; --card: #fff; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body { font-family: Georgia, serif; background: var(--bg); color: var(--ink); line-height: 1.5; }
+header { padding: 1.25rem; max-width: 760px; margin: 0 auto; border-bottom: 1px solid var(--rule); }
+.brand-back { color: var(--soft); text-decoration: none; font-size: 0.9rem; }
+main { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+h1 { font-size: 1.7rem; margin-bottom: 0.5rem; }
+.sub { color: var(--soft); margin-bottom: 2rem; }
+.panel { background: var(--card); border: 1px solid var(--rule); border-radius: 4px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.85rem; margin-bottom: 1rem; }
+.field label { display: block; font-size: 0.85rem; color: var(--soft); margin-bottom: 0.3rem; font-weight: 600; }
+.field input, .field select { width: 100%; padding: 0.65rem 0.75rem; border: 1px solid var(--rule); border-radius: 4px; font-size: 1rem; font-family: inherit; background: var(--bg); }
+button.go { background: var(--accent); color: #fff; border: none; padding: 0.85rem 1.5rem; font-size: 1rem; font-weight: 700; border-radius: 4px; cursor: pointer; margin-top: 0.5rem; }
+.results { background: #fff; border-left: 3px solid var(--warm); padding: 1.5rem; border-radius: 4px; margin-top: 1.5rem; display: none; }
+.results.visible { display: block; }
+.big { text-align: center; padding: 1rem 0; }
+.big .value { font-size: 2.2rem; font-weight: 700; color: var(--accent); }
+.big .label { font-size: 0.95rem; color: var(--soft); margin-top: 0.25rem; }
+.row { display: flex; justify-content: space-between; padding: 0.55rem 0; border-bottom: 1px solid var(--rule); font-size: 0.95rem; }
+.row:last-child { border-bottom: none; }
+.row .l { color: var(--soft); }
+.row .v { font-weight: 600; }
+.note { background: #fcf5e8; padding: 1rem 1.25rem; border-radius: 4px; margin-top: 1.25rem; color: var(--soft); font-size: 0.9rem; }
+.note strong { color: var(--ink); }
+.affiliate { background: #fff; border: 1px solid var(--rule); padding: 1.25rem; border-radius: 4px; margin-top: 1.5rem; }
+.affiliate a { color: var(--accent); font-weight: 700; }
+.affiliate .disc { font-size: 0.85rem; color: var(--soft); margin-top: 0.6rem; }
+footer { max-width: 760px; margin: 3rem auto 2rem; padding: 1.5rem 1.25rem 0; border-top: 1px solid var(--rule); font-size: 0.9rem; color: var(--soft); text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/" class="brand-back">← Hive Leatherworking</a>
+</header>
+<main>
+
+<h1>Stitching SPI Calculator</h1>
+<p class="sub">Recommended stitches per inch, thread size, and pricking iron pitch by leather thickness and project.</p>
+
+<div class="panel">
+
+  <div class="field-grid">
+    <div class="field">
+      <label>Leather thickness</label>
+      <select id="thickness">
+        <option value="2">2-3 oz (0.8-1.2 mm) — lining</option>
+        <option value="4" selected>4-5 oz (1.6-2.0 mm) — wallet exterior</option>
+        <option value="6">6-7 oz (2.4-2.8 mm) — belt, light bag</option>
+        <option value="8">8-9 oz (3.2-3.6 mm) — heavy belt, holster</option>
+        <option value="10">10-12 oz (4.0-4.8 mm) — saddle, heavy holster</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Project type</label>
+      <select id="project">
+        <option value="wallet" selected>Wallet / cardholder</option>
+        <option value="belt">Belt</option>
+        <option value="bag">Bag / tote</option>
+        <option value="holster">Holster</option>
+        <option value="watch_strap">Watch strap</option>
+        <option value="saddle">Saddle / heavy goods</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Stitch style</label>
+      <select id="style">
+        <option value="fine" selected>Fine (decorative)</option>
+        <option value="standard">Standard</option>
+        <option value="heavy">Heavy (durability)</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="go" onclick="calc()">Recommend SPI</button>
+
+  <div class="results" id="results"></div>
+
+</div>
+
+</main>
+<footer>
+  <p>Part of <a href="https://thehivemakes.com" style="color: var(--soft);">the Hive</a>. Made in Wilmington, Delaware.</p>
+</footer>
+
+<script>
+function calc() {
+  const thick = parseInt(document.getElementById("thickness").value);
+  const project = document.getElementById("project").value;
+  const style = document.getElementById("style").value;
+
+  // Base SPI by leather thickness (thinner leather can take more stitches per inch)
+  const BASE_SPI = { 2: 10, 4: 8, 6: 7, 8: 6, 10: 5 };
+
+  // Project modifier
+  const PROJECT_MOD = {
+    wallet: 1, belt: 0, bag: 0, holster: -1, watch_strap: 1, saddle: -1
+  };
+
+  // Style modifier
+  const STYLE_MOD = { fine: 1, standard: 0, heavy: -1 };
+
+  let spi = BASE_SPI[thick] + PROJECT_MOD[project] + STYLE_MOD[style];
+  if (spi < 4) spi = 4;
+  if (spi > 12) spi = 12;
+
+  // Pricking iron pitch in mm: roughly 25.4 / SPI
+  const pitch_mm = (25.4 / spi).toFixed(2);
+
+  // Thread size recommendation (Tex sizing)
+  const THREAD_TEX = { 2: 30, 4: 40, 6: 60, 8: 90, 10: 135 };
+  const tex = THREAD_TEX[thick];
+
+  // Polyester equivalent
+  const POLY_LABEL = { 30: "Ritza Tiger 0.4mm or similar Tex 30", 40: "Ritza Tiger 0.6mm or Tex 40", 60: "Ritza Tiger 0.8mm or Tex 60", 90: "Ritza Tiger 1.0mm or Tex 90", 135: "Ritza Tiger 1.2mm+ or Tex 135" };
+
+  // Needle size (John James saddler's needles)
+  const NEEDLE = { 2: "Size 002 (smaller)", 4: "Size 002", 6: "Size 002 or 004", 8: "Size 004", 10: "Size 004 or 008" };
+
+  document.getElementById("results").innerHTML = `
+    <div class="big">
+      <div class="value">${spi} SPI</div>
+      <div class="label">${pitch_mm} mm pricking iron pitch</div>
+    </div>
+    <div class="row"><span class="l">Stitches per inch (SPI)</span><span class="v">${spi}</span></div>
+    <div class="row"><span class="l">Pricking iron / chisel pitch</span><span class="v">${pitch_mm} mm</span></div>
+    <div class="row"><span class="l">Recommended thread</span><span class="v">${POLY_LABEL[tex]}</span></div>
+    <div class="row"><span class="l">Saddler's needle size</span><span class="v">${NEEDLE[thick]}</span></div>
+    <div class="row"><span class="l">Stitching speed (target)</span><span class="v">~${(60/spi).toFixed(0)} seconds per inch (saddle stitch)</span></div>
+    <div class="note">
+      <strong>Why this matters:</strong> Too many stitches per inch on thick leather causes perforation-line tearing under stress. Too few stitches per inch on thin leather looks loose and unprofessional. The recommendation above is the productive midpoint. Pricking iron pitch is the more reliable spec to buy than SPI; some makers list 3.0 mm, 3.38 mm, 3.85 mm pitch irons (corresponding to ~8.5 SPI, 7.5 SPI, 6.6 SPI). Match the iron to your most-common leather thickness, not your one fancy project.
+    </div>
+    <div class="affiliate">
+      <strong>Leatherworking tools on eBay:</strong><br>
+      <a href="https://www.ebay.com/sch/i.html?_nkw=ritza+tiger+thread&campid=5339144864" rel="sponsored" target="_blank">Ritza Tiger thread (Julius Koch) on eBay</a><br>
+      <a href="https://www.ebay.com/sch/i.html?_nkw=john+james+saddlers+needles&campid=5339144864" rel="sponsored" target="_blank">John James saddler's needles on eBay</a><br>
+      <a href="https://www.ebay.com/sch/i.html?_nkw=pricking+iron+leatherwork&campid=5339144864" rel="sponsored" target="_blank">Pricking irons on eBay (Crimson Hide, Kemovan, etc.)</a>
+      <div class="disc">eBay Partner Network affiliate links. Small commission, doesn't change your price. KS Blade Punch makes excellent pricking irons at a third the price of Vergez Blanchard; they're not on every affiliate's list but they're worth knowing about.</div>
+    </div>
+  `;
+  document.getElementById("results").classList.add("visible");
+}
+</script>
+</body>
+</html>
